@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WeatherUiState {
 
- WeatherForecast? get weatherForecast; AppError? get error;
+ WeatherForecast? get weatherForecast; AppError? get error; bool get isLoading;
 /// Create a copy of WeatherUiState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $WeatherUiStateCopyWith<WeatherUiState> get copyWith => _$WeatherUiStateCopyWith
 @override
 bool operator ==(Object other) {
   final _this = this as WeatherUiState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WeatherUiState&&(identical(other.weatherForecast, _this.weatherForecast) || other.weatherForecast == _this.weatherForecast)&&(identical(other.error, _this.error) || other.error == _this.error));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WeatherUiState&&(identical(other.weatherForecast, _this.weatherForecast) || other.weatherForecast == _this.weatherForecast)&&(identical(other.error, _this.error) || other.error == _this.error)&&(identical(other.isLoading, _this.isLoading) || other.isLoading == _this.isLoading));
 }
 
 
 @override
 int get hashCode {
   final _this = this as WeatherUiState;
-  return Object.hash(runtimeType,_this.weatherForecast,_this.error);
+  return Object.hash(runtimeType,_this.weatherForecast,_this.error,_this.isLoading);
 }
 
 @override
 String toString() {
   final _this = this as WeatherUiState;
-  return 'WeatherUiState(weatherForecast: ${_this.weatherForecast}, error: ${_this.error})';
+  return 'WeatherUiState(weatherForecast: ${_this.weatherForecast}, error: ${_this.error}, isLoading: ${_this.isLoading})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $WeatherUiStateCopyWith<$Res>  {
   factory $WeatherUiStateCopyWith(WeatherUiState value, $Res Function(WeatherUiState) _then) = _$WeatherUiStateCopyWithImpl;
 @useResult
 $Res call({
- WeatherForecast? weatherForecast, AppError? error
+ WeatherForecast? weatherForecast, AppError? error, bool isLoading
 });
 
 
@@ -68,11 +68,12 @@ class _$WeatherUiStateCopyWithImpl<$Res>
 
 /// Create a copy of WeatherUiState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? weatherForecast = freezed,Object? error = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? weatherForecast = freezed,Object? error = freezed,Object? isLoading = null,}) {
   return _then(WeatherUiState(
 weatherForecast: freezed == weatherForecast ? _self.weatherForecast : weatherForecast // ignore: cast_nullable_to_non_nullable
 as WeatherForecast?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
-as AppError?,
+as AppError?,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 /// Create a copy of WeatherUiState
@@ -169,10 +170,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( WeatherForecast? weatherForecast,  AppError? error)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( WeatherForecast? weatherForecast,  AppError? error,  bool isLoading)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WeatherUiState() when $default != null:
-return $default(_that.weatherForecast,_that.error);case _:
+return $default(_that.weatherForecast,_that.error,_that.isLoading);case _:
   return orElse();
 
 }
@@ -190,10 +191,10 @@ return $default(_that.weatherForecast,_that.error);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( WeatherForecast? weatherForecast,  AppError? error)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( WeatherForecast? weatherForecast,  AppError? error,  bool isLoading)  $default,) {final _that = this;
 switch (_that) {
 case _WeatherUiState():
-return $default(_that.weatherForecast,_that.error);case _:
+return $default(_that.weatherForecast,_that.error,_that.isLoading);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,10 +211,10 @@ return $default(_that.weatherForecast,_that.error);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( WeatherForecast? weatherForecast,  AppError? error)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( WeatherForecast? weatherForecast,  AppError? error,  bool isLoading)?  $default,) {final _that = this;
 switch (_that) {
 case _WeatherUiState() when $default != null:
-return $default(_that.weatherForecast,_that.error);case _:
+return $default(_that.weatherForecast,_that.error,_that.isLoading);case _:
   return null;
 
 }
@@ -225,11 +226,12 @@ return $default(_that.weatherForecast,_that.error);case _:
 
 
 class _WeatherUiState implements WeatherUiState {
-  const _WeatherUiState({this.weatherForecast, this.error});
+  const _WeatherUiState({this.weatherForecast, this.error, this.isLoading = false});
   
 
 @override final  WeatherForecast? weatherForecast;
 @override final  AppError? error;
+@override@JsonKey() final  bool isLoading;
 
 /// Create a copy of WeatherUiState
 /// with the given fields replaced by the non-null parameter values.
@@ -241,18 +243,18 @@ _$WeatherUiStateCopyWith<_WeatherUiState> get copyWith => __$WeatherUiStateCopyW
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WeatherUiState&&(identical(other.weatherForecast, weatherForecast) || other.weatherForecast == weatherForecast)&&(identical(other.error, error) || other.error == error));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WeatherUiState&&(identical(other.weatherForecast, weatherForecast) || other.weatherForecast == weatherForecast)&&(identical(other.error, error) || other.error == error)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,weatherForecast,error);
+    return Object.hash(runtimeType,weatherForecast,error,isLoading);
 }
 
 @override
 String toString() {
-    return 'WeatherUiState(weatherForecast: $weatherForecast, error: $error)';
+    return 'WeatherUiState(weatherForecast: $weatherForecast, error: $error, isLoading: $isLoading)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$WeatherUiStateCopyWith<$Res> implements $WeatherUiStateCo
   factory _$WeatherUiStateCopyWith(_WeatherUiState value, $Res Function(_WeatherUiState) _then) = __$WeatherUiStateCopyWithImpl;
 @override @useResult
 $Res call({
- WeatherForecast? weatherForecast, AppError? error
+ WeatherForecast? weatherForecast, AppError? error, bool isLoading
 });
 
 
@@ -280,11 +282,12 @@ class __$WeatherUiStateCopyWithImpl<$Res>
 
 /// Create a copy of WeatherUiState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? weatherForecast = freezed,Object? error = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? weatherForecast = freezed,Object? error = freezed,Object? isLoading = null,}) {
   return _then(_WeatherUiState(
 weatherForecast: freezed == weatherForecast ? _self.weatherForecast : weatherForecast // ignore: cast_nullable_to_non_nullable
 as WeatherForecast?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
-as AppError?,
+as AppError?,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -132,6 +135,44 @@ void main() {
       await tapReload(tester);
 
       expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('取得中は CircularProgressIndicator を表示し、Reload を押せなくする', (
+      tester,
+    ) async {
+      final response = Completer<void>();
+      Future<R> computeAfterResponse<M, R>(
+        ComputeCallback<M, R> callback,
+        M message,
+      ) async {
+        await response.future;
+        return callback(message);
+      }
+
+      await pumpWeatherScreen(
+        tester,
+        FakeYumemiWeather.returns(weatherResponseJson()),
+        compute: computeAfterResponse,
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+
+      await tester.tap(find.text('Reload'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+        tester
+            .widget<TextButton>(find.widgetWithText(TextButton, 'Reload'))
+            .onPressed,
+        isNull,
+      );
+
+      response.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(SvgPicture), findsOneWidget);
     });
 
     testWidgets('取得前は気温を ** ℃ で表示する', (tester) async {

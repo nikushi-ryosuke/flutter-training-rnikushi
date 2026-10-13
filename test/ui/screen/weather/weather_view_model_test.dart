@@ -54,7 +54,7 @@ void main() {
       ]);
     });
 
-    test('取得に成功すると、天気予報を持つ状態を通知する', () async {
+    test('取得中は読み込み中の状態を通知し、成功すると天気予報を持つ状態を通知する', () async {
       final container = createContainer(
         FakeYumemiWeather.returns(weatherResponseJson()),
       );
@@ -64,6 +64,7 @@ void main() {
 
       expect(states, [
         const WeatherUiState(),
+        const WeatherUiState(isLoading: true),
         WeatherUiState(weatherForecast: forecast),
       ]);
     });
@@ -77,6 +78,22 @@ void main() {
 
       expect(api.requests.map(jsonDecode), [
         {'area': 'tokyo', 'date': '2020-04-01T03:00:00.000Z'},
+      ]);
+    });
+
+    test('取得中に再度呼び出しても、API は 1 回だけ呼び出す', () async {
+      final api = FakeYumemiWeather.returns(weatherResponseJson());
+      final container = createContainer(api);
+      final states = listenStates(container);
+      final viewModel = container.read(weatherViewModelProvider.notifier);
+
+      await Future.wait([viewModel.fetchWeather(), viewModel.fetchWeather()]);
+
+      expect(api.requests, hasLength(1));
+      expect(states, [
+        const WeatherUiState(),
+        const WeatherUiState(isLoading: true),
+        WeatherUiState(weatherForecast: forecast),
       ]);
     });
 
@@ -109,6 +126,7 @@ void main() {
 
         expect(states, [
           const WeatherUiState(),
+          const WeatherUiState(isLoading: true),
           WeatherUiState(error: error),
         ]);
       });
@@ -129,7 +147,9 @@ void main() {
 
       expect(states, [
         const WeatherUiState(),
+        const WeatherUiState(isLoading: true),
         WeatherUiState(weatherForecast: forecast),
+        WeatherUiState(weatherForecast: forecast, isLoading: true),
         WeatherUiState(weatherForecast: forecast, error: const UnknownError()),
       ]);
     });
@@ -150,7 +170,9 @@ void main() {
 
       expect(states, [
         const WeatherUiState(),
+        const WeatherUiState(isLoading: true),
         WeatherUiState(weatherForecast: forecast),
+        WeatherUiState(weatherForecast: forecast, isLoading: true),
         WeatherUiState(weatherForecast: forecast, error: const UnknownError()),
         WeatherUiState(weatherForecast: forecast),
       ]);

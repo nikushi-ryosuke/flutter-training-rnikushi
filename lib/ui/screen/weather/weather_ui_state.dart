@@ -9,5 +9,6 @@ abstract class WeatherUiState with _$WeatherUiState {
   const factory WeatherUiState({
     WeatherForecast? weatherForecast,
     AppError? error,
+    @Default(false) bool isLoading,
   }) = _WeatherUiState;
 }
