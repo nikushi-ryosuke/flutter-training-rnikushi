@@ -53,7 +53,8 @@ void main() {
 
     final invalidCases = <String, Map<String, dynamic>>{
       '想定外の天気': decode(weatherResponseJson(weatherCondition: 'snowy')),
-      'キーの欠落': {'weather_condition': 'sunny', 'max_temperature': 25},
+      for (final key in decode(weatherResponseJson()).keys)
+        '$key の欠落': decode(weatherResponseJson())..remove(key),
       '型の不一致': {
         ...decode(weatherResponseJson()),
         'max_temperature': '25',
