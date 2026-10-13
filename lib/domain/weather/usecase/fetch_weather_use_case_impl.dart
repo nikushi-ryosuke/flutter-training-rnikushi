@@ -9,7 +9,7 @@ class FetchWeatherUseCaseImpl implements FetchWeatherUseCase {
   final WeatherRepository _repository;
 
   @override
-  Result<WeatherForecast> call({
+  Future<Result<WeatherForecast>> call({
     required String area,
     required DateTime date,
   }) => _repository.fetchWeatherForecast(area: area, date: date);

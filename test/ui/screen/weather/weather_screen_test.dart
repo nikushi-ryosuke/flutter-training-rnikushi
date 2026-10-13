@@ -2,20 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_training/di/compute_provider.dart';
 import 'package:flutter_training/di/weather_providers.dart';
 import 'package:flutter_training/ui/screen/weather/weather_screen.dart';
 import 'package:yumemi_weather/yumemi_weather.dart';
 
 import '../../../fake/fake_yumemi_weather.dart';
+import '../../../helper/compute_runner.dart';
 
-Future<void> pumpWeatherScreen(WidgetTester tester, YumemiWeather api) {
+Future<void> pumpWeatherScreen(
+  WidgetTester tester,
+  YumemiWeather api, {
+  ComputeRunner compute = computeDirectly,
+}) {
   tester.view
     ..physicalSize = const Size(1080, 2400)
     ..devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   return tester.pumpWidget(
     ProviderScope(
-      overrides: [yumemiWeatherProvider.overrideWithValue(api)],
+      overrides: [
+        yumemiWeatherProvider.overrideWithValue(api),
+        computeProvider.overrideWithValue(compute),
+      ],
       child: const MaterialApp(home: WeatherScreen()),
     ),
   );

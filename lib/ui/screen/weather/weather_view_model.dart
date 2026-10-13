@@ -13,11 +13,14 @@ class WeatherViewModel extends Notifier<WeatherUiState> {
   @override
   WeatherUiState build() => const WeatherUiState();
 
-  void fetchWeather() {
-    final result = ref.read(fetchWeatherUseCaseProvider)(
+  Future<void> fetchWeather() async {
+    final result = await ref.read(fetchWeatherUseCaseProvider)(
       area: _area,
       date: ref.read(clockProvider)(),
     );
+    if (!ref.mounted) {
+      return;
+    }
     state = switch (result) {
       Success(:final value) => WeatherUiState(weatherForecast: value),
       Failure(:final error) => state.copyWith(error: error),
