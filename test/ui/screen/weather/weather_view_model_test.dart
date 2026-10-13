@@ -132,10 +132,11 @@ void main() {
         ..fetchWeather()
         ..fetchWeather();
 
-      expect(
-        states.last,
+      expect(states, [
+        isWeatherUiState(weatherForecast: isNull, error: isNull),
+        isWeatherUiState(weatherForecast: forecast, error: isNull),
         isWeatherUiState(weatherForecast: forecast, error: isA<UnknownError>()),
-      );
+      ]);
     });
 
     test('clearError で、天気予報を残したままエラーだけを消す', () {
@@ -152,10 +153,12 @@ void main() {
         ..fetchWeather()
         ..clearError();
 
-      expect(
-        states.last,
+      expect(states, [
+        isWeatherUiState(weatherForecast: isNull, error: isNull),
         isWeatherUiState(weatherForecast: forecast, error: isNull),
-      );
+        isWeatherUiState(weatherForecast: forecast, error: isA<UnknownError>()),
+        isWeatherUiState(weatherForecast: forecast, error: isNull),
+      ]);
     });
   });
 }
