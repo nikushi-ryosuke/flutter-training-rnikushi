@@ -20,14 +20,11 @@ class WeatherViewModel extends Notifier<WeatherUiState> {
     );
     state = switch (result) {
       Success(:final value) => WeatherUiState(weatherForecast: value),
-      Failure(:final error) => WeatherUiState(
-        weatherForecast: state.weatherForecast,
-        error: error,
-      ),
+      Failure(:final error) => state.copyWith(error: error),
     };
   }
 
   void clearError() {
-    state = WeatherUiState(weatherForecast: state.weatherForecast);
+    state = state.copyWith(error: null);
   }
 }

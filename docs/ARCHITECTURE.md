@@ -177,6 +177,7 @@ final class UnknownError extends AppError { const UnknownError(); }
 
 - ViewModel の状態は画面単位の UiState（例: `WeatherUiState`）にまとめ、表示中のデータ（`weatherForecast`）と未表示のエラー（`error`）を別のフィールドで持つ
   - 取得に失敗しても表示中のデータは保持し、`error` だけを設定する
+  - UiState は `freezed` で定義し、一部のフィールドだけを変えるときは `copyWith` を使う。値の等価性（`==`）は ViewModel のテストで通知された状態の比較に使う
 - エラーメッセージは UI の拡張メソッド（`AppErrorX.message`）で `AppError` を `switch` して決める
 - Screen は `ref.listen` で `error` を購読し、`null` 以外になったら `showDialog` で `AlertDialog` を表示する
   - ダイアログを閉じたら ViewModel の `clearError()` を呼び、`error` を `null` に戻す（同じエラーが続いても再度表示できるようにするため）
@@ -188,12 +189,12 @@ final class UnknownError extends AppError { const UnknownError(); }
   - リクエストの DTO は `@Freezed(fromJson: false, toJson: true)`、レスポンスの DTO は `@Freezed(toJson: false)` とし、使う向きの変換だけを生成する
   - レスポンスの DTO は `toXxx()`（例: `toWeatherForecast()`）で Domain Model に変換する。Domain Model は JSON のキー名や形式を知らない
   - enum は名前が API の値と一致するため、DTO のフィールドに Domain の enum（`WeatherCondition`）をそのまま使う
-- Domain Model も `freezed` で定義し、値の等価性（`==`）をテストでの比較に使う
+- Domain Model と UiState も `freezed` で定義し、値の等価性（`==`）をテストでの比較に使う
 - 共通の設定はプロジェクト直下の `build.yaml` にまとめる
   - `field_rename: snake`: Dart の lowerCamelCase のフィールドを API の snake_case のキーに対応させる（`@JsonKey(name: ...)` は書かない）
   - `checked: true`: 型の不一致・キーの欠落・未知の enum 値を `CheckedFromJsonException`（`Exception`）として投げるようにし、`avoid_catching_errors` に従ったまま RepositoryImpl で catch できるようにする
   - `explicit_to_json: true`: ネストした DTO も `toJson` で変換する
-- 生成ファイル（`*.freezed.dart` / `*.g.dart`）はコミットする。CI では生成を行わないため、DTO や Domain Model を変更したら `fvm dart run build_runner build` を実行して生成ファイルも更新する
+- 生成ファイル（`*.freezed.dart` / `*.g.dart`）はコミットする。CI では生成を行わないため、DTO・Domain Model・UiState を変更したら `fvm dart run build_runner build` を実行して生成ファイルも更新する
   - 生成ファイルは `analysis_options.yaml` で静的解析の対象から外す
 
 ## テスト方針

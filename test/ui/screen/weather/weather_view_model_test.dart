@@ -39,13 +39,6 @@ List<WeatherUiState> listenStates(ProviderContainer container) {
   return states;
 }
 
-Matcher isWeatherUiState({
-  required Object? weatherForecast,
-  required Object? error,
-}) => isA<WeatherUiState>()
-    .having((s) => s.weatherForecast, 'weatherForecast', weatherForecast)
-    .having((s) => s.error, 'error', error);
-
 void main() {
   group('WeatherViewModel', () {
     test('初期状態は天気予報もエラーも持たない', () {
@@ -54,7 +47,7 @@ void main() {
       );
 
       expect(listenStates(container), [
-        isWeatherUiState(weatherForecast: isNull, error: isNull),
+        const WeatherUiState(),
       ]);
     });
 
@@ -67,8 +60,8 @@ void main() {
       container.read(weatherViewModelProvider.notifier).fetchWeather();
 
       expect(states, [
-        isWeatherUiState(weatherForecast: isNull, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isNull),
+        const WeatherUiState(),
+        WeatherUiState(weatherForecast: forecast),
       ]);
     });
 
@@ -87,19 +80,19 @@ void main() {
     final failureCases = {
       'API が invalidParameter を投げる': (
         FakeYumemiWeather.throws(YumemiWeatherError.invalidParameter),
-        isA<InvalidParameterError>(),
+        const InvalidParameterError(),
       ),
       'API が unknown を投げる': (
         FakeYumemiWeather.throws(YumemiWeatherError.unknown),
-        isA<UnknownError>(),
+        const UnknownError(),
       ),
       'API が JSON ではない文字列を返す': (
         FakeYumemiWeather.returns('sunny'),
-        isA<MalformedJsonError>(),
+        const MalformedJsonError(),
       ),
       'API が期待する形式ではない JSON を返す': (
         FakeYumemiWeather.returns('[]'),
-        isA<UnexpectedResponseError>(),
+        const UnexpectedResponseError(),
       ),
     };
 
@@ -112,8 +105,8 @@ void main() {
         container.read(weatherViewModelProvider.notifier).fetchWeather();
 
         expect(states, [
-          isWeatherUiState(weatherForecast: isNull, error: isNull),
-          isWeatherUiState(weatherForecast: isNull, error: error),
+          const WeatherUiState(),
+          WeatherUiState(error: error),
         ]);
       });
     }
@@ -133,9 +126,9 @@ void main() {
         ..fetchWeather();
 
       expect(states, [
-        isWeatherUiState(weatherForecast: isNull, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isA<UnknownError>()),
+        const WeatherUiState(),
+        WeatherUiState(weatherForecast: forecast),
+        WeatherUiState(weatherForecast: forecast, error: const UnknownError()),
       ]);
     });
 
@@ -154,10 +147,10 @@ void main() {
         ..clearError();
 
       expect(states, [
-        isWeatherUiState(weatherForecast: isNull, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isA<UnknownError>()),
-        isWeatherUiState(weatherForecast: forecast, error: isNull),
+        const WeatherUiState(),
+        WeatherUiState(weatherForecast: forecast),
+        WeatherUiState(weatherForecast: forecast, error: const UnknownError()),
+        WeatherUiState(weatherForecast: forecast),
       ]);
     });
   });
