@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_training/di/clock_provider.dart';
 import 'package:flutter_training/di/weather_providers.dart';
 import 'package:flutter_training/domain/model/result.dart';
 import 'package:flutter_training/ui/screen/weather/weather_ui_state.dart';
@@ -15,7 +16,7 @@ class WeatherViewModel extends Notifier<WeatherUiState> {
   void fetchWeather() {
     final result = ref.read(fetchWeatherUseCaseProvider)(
       area: _area,
-      date: DateTime.now(),
+      date: ref.read(clockProvider)(),
     );
     state = switch (result) {
       Success(:final value) => WeatherUiState(weatherForecast: value),

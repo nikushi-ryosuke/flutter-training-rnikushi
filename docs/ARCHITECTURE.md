@@ -52,6 +52,7 @@ flowchart LR
 lib/
 ├── main.dart                      # ProviderScope と MaterialApp の起動のみ
 ├── di/                            # Provider 定義（依存の組み立て）
+│   ├── clock_provider.dart        # 現在時刻を返す関数
 │   └── weather_providers.dart
 ├── domain/
 │   ├── model/                     # 機能をまたいで使う共通モデル
@@ -71,9 +72,10 @@ lib/
         └── weather/               # Screen・ViewModel・UiState と表示用の拡張メソッド
 
 test/
+├── data/api/weather/dto/          # DTO の JSON 変換のユニットテスト
 ├── domain/weather/usecase/        # UseCase のユニットテスト
 ├── ui/screen/launch/              # AfterLayoutMixin の Widget テスト
-├── ui/screen/weather/             # WeatherScreen の Widget テスト（気温の表示・エラーダイアログ）
+├── ui/screen/weather/             # WeatherViewModel のユニットテストと WeatherScreen の Widget テスト（気温の表示・エラーダイアログ）
 ├── fake/                          # 外部 API の Fake
 └── helper/                        # テスト用 Matcher など
 ```
@@ -93,6 +95,7 @@ final weatherRepositoryProvider = Provider<WeatherRepository>(
 ```
 
 - 外部 API のクライアント（`YumemiWeather`）も Provider にして、テストで差し替えられるようにする
+- 現在時刻も `DateTime.now()` を直接呼ばず、`clockProvider`（`DateTime Function()`）から取得する。テストで固定の日時に差し替え、API に渡す日時を検証できるようにするため
 - ViewModel は `Notifier<State>` を継承し、`NotifierProvider` を ViewModel と同じファイルに定義する
   - 画面の状態は画面を閉じたら破棄するため、`NotifierProvider.autoDispose` で定義する
   - 初期状態は `build()` で返す
@@ -196,6 +199,10 @@ final class UnknownError extends AppError { const UnknownError(); }
 ## テスト方針
 
 - **ユニットテストは UseCase に対して書く。** Repository は本物の `RepositoryImpl` を使い、外部 API だけを Fake に差し替える。これで UseCase と Repository の振る舞い（レスポンス・API のエラーから `Result` への変換）をまとめて保証する
+- **ViewModel にもユニットテストを書く。** UseCase のテストと同じく外部 API だけを Fake に差し替え、API の結果から UiState への変換と、状態がリスナーに通知されることを保証する
+  - `container.listen(xxxViewModelProvider, ..., fireImmediately: true)` で通知された状態を記録し、初期状態から順に検証する。`autoDispose` の Provider が途中で破棄されないようにする意味もある
+  - 現在時刻は `clockProvider` を固定の日時に差し替え、API に渡すリクエストを検証する
+- **DTO の JSON 変換もユニットテストで検証する。** `toJson` のキー名と値の形式、`fromJson` から Domain Model への変換、想定外の JSON で `CheckedFromJsonException` を投げることを確かめる
 - 依存の差し替えは `ProviderContainer.test(overrides: [...])` と `overrideWithValue` で行う
 
 ```dart
