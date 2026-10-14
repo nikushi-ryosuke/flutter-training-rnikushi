@@ -26,7 +26,11 @@ class WeatherViewModel extends Notifier<WeatherUiState> {
       return;
     }
     state = switch (result) {
-      Success(:final value) => WeatherUiState(weatherForecast: value),
+      Success(:final value) => state.copyWith(
+        weatherForecast: value,
+        isLoading: false,
+        error: null,
+      ),
       Failure(:final error) => state.copyWith(isLoading: false, error: error),
     };
   }
