@@ -77,7 +77,7 @@ test/
 ├── data/api/weather/dto/          # DTO の JSON 変換のユニットテスト
 ├── domain/weather/usecase/        # UseCase のユニットテスト
 ├── ui/screen/launch/              # AfterLayoutMixin の Widget テスト
-├── ui/screen/weather/             # WeatherViewModel のユニットテストと WeatherScreen の Widget テスト（気温の表示・エラーダイアログ・読み込み中の表示）
+├── ui/screen/weather/             # WeatherViewModel のユニットテストと WeatherScreen の Widget テスト（天気の画像と気温の表示・エラーダイアログ・読み込み中の表示）
 ├── fake/                          # 外部 API の Fake
 └── helper/                        # テスト用 Matcher、その場で実行する compute など
 ```
@@ -256,3 +256,6 @@ FetchWeatherUseCase createUseCase(
 - API に渡すリクエストは、Fake が記録した JSON 文字列（`requests`）を `jsonDecode` して `Map` で検証する
 - 画面をまたいで使う UI の仕組み（`AfterLayoutMixin` など）は、テスト用の Widget に組み込んで `testWidgets` で振る舞いを検証する
 - 画面の振る舞いのうち、状態と UI の連携に依存するもの（エラーダイアログの表示と、閉じた後の再表示など）は、Screen の Widget テストで検証する。差し替えるのは外部 API の Fake と `computeProvider` だけにする（`ProviderScope(overrides: [...])`）
+  - Widget テストはピクセルではなく Widget のツリーを検証する。前提条件は Fake の API が返すもので決め、Reload のタップなどの操作の後に、意図した Widget が意図したプロパティでツリーにあることを Finder で確かめる
+  - 期待値は仕様から決まる値を直接書く（例: `'assets/images/sunny.svg'`）。実装の対応表（`WeatherConditionX.assetPath` など）から期待値を作ると、対応表が誤っていてもテストが通ってしまうため
+  - 天気の画像は、`SvgPicture` の `bytesLoader`（`SvgAssetLoader`）の `assetName` で判定する

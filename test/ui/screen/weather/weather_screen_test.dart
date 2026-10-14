@@ -39,6 +39,15 @@ Future<void> tapReload(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Finder findSvgAsset(String assetName) => find.byWidgetPredicate(
+  (widget) =>
+      widget is SvgPicture &&
+      switch (widget.bytesLoader) {
+        SvgAssetLoader(assetName: final name) => name == assetName,
+        _ => false,
+      },
+);
+
 void main() {
   group('WeatherScreen', () {
     const unknownMessage = '天気を取得できませんでした。時間をおいて再度お試しください。';
@@ -175,6 +184,29 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.byType(SvgPicture), findsOneWidget);
     });
+
+    const imageCases = {
+      '晴れ': ('sunny', 'assets/images/sunny.svg'),
+      '曇り': ('cloudy', 'assets/images/cloudy.svg'),
+      '雨': ('rainy', 'assets/images/rainy.svg'),
+    };
+
+    for (final MapEntry(key: description, value: (weatherCondition, assetName))
+        in imageCases.entries) {
+      testWidgets('API が$descriptionを返すと$descriptionの画像を表示する', (tester) async {
+        await pumpWeatherScreen(
+          tester,
+          FakeYumemiWeather.returns(
+            weatherResponseJson(weatherCondition: weatherCondition),
+          ),
+        );
+
+        await tapReload(tester);
+
+        expect(findSvgAsset(assetName), findsOneWidget);
+        expect(find.byType(Placeholder), findsNothing);
+      });
+    }
 
     testWidgets('取得前は気温を ** ℃ で表示する', (tester) async {
       await pumpWeatherScreen(
