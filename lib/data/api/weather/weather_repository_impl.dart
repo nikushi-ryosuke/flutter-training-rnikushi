@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter_training/data/api/compute_runner.dart';
 import 'package:flutter_training/data/api/weather/dto/weather_request.dart';
 import 'package:flutter_training/data/api/weather/dto/weather_response.dart';
 import 'package:flutter_training/domain/model/app_error.dart';
@@ -15,8 +15,7 @@ class WeatherRepositoryImpl implements WeatherRepository {
 
   final YumemiWeather _api;
 
-  final Future<R> Function<M, R>(ComputeCallback<M, R> callback, M message)
-  _compute;
+  final ComputeRunner _compute;
 
   @override
   Future<Result<WeatherForecast>> fetchWeatherForecast({

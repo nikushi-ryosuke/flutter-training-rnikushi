@@ -65,6 +65,7 @@ lib/
 │       └── usecase/               # UseCase interface と実装
 ├── data/
 │   └── api/
+│       ├── compute_runner.dart    # 別の Isolate で処理を実行する関数の型（ComputeRunner）
 │       └── weather/               # API を使う RepositoryImpl
 │           └── dto/               # API のリクエスト・レスポンスの DTO（freezed + json_serializable）
 └── ui/
@@ -98,6 +99,7 @@ final weatherRepositoryProvider = Provider<WeatherRepository>(
 - 外部 API のクライアント（`YumemiWeather`）も Provider にして、テストで差し替えられるようにする
 - 現在時刻も `DateTime.now()` を直接呼ばず、`clockProvider`（`DateTime Function()`）から取得する。テストで固定の日時に差し替え、API に渡す日時を検証できるようにするため
 - 別の Isolate で処理を実行する関数も `compute` を直接呼ばず、`computeProvider`（`ComputeRunner`）から RepositoryImpl に注入する。テストでその場で実行する関数に差し替えられるようにするため（「スレッドをブロックする API」を参照）
+  - `ComputeRunner` の型は RepositoryImpl と DI の両方から参照するため、Data（`lib/data/api/compute_runner.dart`）に置く。Data から `lib/di/` を参照しないようにするため
 - ViewModel は `Notifier<State>` を継承し、`NotifierProvider` を ViewModel と同じファイルに定義する
   - 画面の状態は画面を閉じたら破棄するため、`NotifierProvider.autoDispose` で定義する
   - 初期状態は `build()` で返す

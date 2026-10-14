@@ -1,9 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-typedef ComputeRunner = Future<R> Function<M, R>(
-  ComputeCallback<M, R> callback,
-  M message,
-);
+import 'package:flutter_training/data/api/compute_runner.dart';
 
 final computeProvider = Provider<ComputeRunner>((ref) => compute);
