@@ -42,8 +42,10 @@ Future<void> tapReload(WidgetTester tester) async {
 Finder findSvgAsset(String assetName) => find.byWidgetPredicate(
   (widget) =>
       widget is SvgPicture &&
-      widget.bytesLoader is SvgAssetLoader &&
-      (widget.bytesLoader as SvgAssetLoader).assetName == assetName,
+      switch (widget.bytesLoader) {
+        SvgAssetLoader(assetName: final name) => name == assetName,
+        _ => false,
+      },
 );
 
 void main() {
@@ -183,17 +185,15 @@ void main() {
       expect(find.byType(SvgPicture), findsOneWidget);
     });
 
-    const assetNames = {
-      'sunny': 'assets/images/sunny.svg',
-      'cloudy': 'assets/images/cloudy.svg',
-      'rainy': 'assets/images/rainy.svg',
+    const imageCases = {
+      '晴れ': ('sunny', 'assets/images/sunny.svg'),
+      '曇り': ('cloudy', 'assets/images/cloudy.svg'),
+      '雨': ('rainy', 'assets/images/rainy.svg'),
     };
 
-    for (final MapEntry(key: weatherCondition, value: assetName)
-        in assetNames.entries) {
-      testWidgets('API が $weatherCondition を返すと $assetName の画像を表示する', (
-        tester,
-      ) async {
+    for (final MapEntry(key: description, value: (weatherCondition, assetName))
+        in imageCases.entries) {
+      testWidgets('API が$descriptionを返すと$descriptionの画像を表示する', (tester) async {
         await pumpWeatherScreen(
           tester,
           FakeYumemiWeather.returns(
