@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_training/data/api/compute_runner.dart';
 import 'package:flutter_training/data/api/weather/dto/weather_request.dart';
 import 'package:flutter_training/data/api/weather/dto/weather_response.dart';
 import 'package:flutter_training/domain/model/app_error.dart';
@@ -10,18 +11,21 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:yumemi_weather/yumemi_weather.dart';
 
 class WeatherRepositoryImpl implements WeatherRepository {
-  const WeatherRepositoryImpl(this._api);
+  const WeatherRepositoryImpl(this._api, this._compute);
 
   final YumemiWeather _api;
 
+  final ComputeRunner _compute;
+
   @override
-  Result<WeatherForecast> fetchWeatherForecast({
+  Future<Result<WeatherForecast>> fetchWeatherForecast({
     required String area,
     required DateTime date,
-  }) {
+  }) async {
     final request = jsonEncode(WeatherRequest(area: area, date: date).toJson());
     try {
-      return switch (jsonDecode(_api.fetchWeather(request))) {
+      final response = await _compute(_api.syncFetchWeather, request);
+      return switch (jsonDecode(response)) {
         final Map<String, dynamic> json => Success(
           WeatherResponse.fromJson(json).toWeatherForecast(),
         ),

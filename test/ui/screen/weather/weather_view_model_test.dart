@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_training/di/clock_provider.dart';
+import 'package:flutter_training/di/compute_provider.dart';
 import 'package:flutter_training/di/weather_providers.dart';
 import 'package:flutter_training/domain/model/app_error.dart';
 import 'package:flutter_training/domain/weather/model/weather_condition.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_training/ui/screen/weather/weather_view_model.dart';
 import 'package:yumemi_weather/yumemi_weather.dart';
 
 import '../../../fake/fake_yumemi_weather.dart';
+import '../../../helper/compute_runner.dart';
 
 final now = DateTime.utc(2020, 4, 1, 3);
 
@@ -26,6 +28,7 @@ ProviderContainer createContainer(YumemiWeather api) => ProviderContainer.test(
   overrides: [
     yumemiWeatherProvider.overrideWithValue(api),
     clockProvider.overrideWithValue(() => now),
+    computeProvider.overrideWithValue(computeDirectly),
   ],
 );
 
@@ -39,13 +42,6 @@ List<WeatherUiState> listenStates(ProviderContainer container) {
   return states;
 }
 
-Matcher isWeatherUiState({
-  required Object? weatherForecast,
-  required Object? error,
-}) => isA<WeatherUiState>()
-    .having((s) => s.weatherForecast, 'weatherForecast', weatherForecast)
-    .having((s) => s.error, 'error', error);
-
 void main() {
   group('WeatherViewModel', () {
     test('初期状態は天気予報もエラーも持たない', () {
@@ -54,71 +50,89 @@ void main() {
       );
 
       expect(listenStates(container), [
-        isWeatherUiState(weatherForecast: isNull, error: isNull),
+        const WeatherUiState(),
       ]);
     });
 
-    test('取得に成功すると、天気予報を持つ状態を通知する', () {
+    test('取得中は読み込み中の状態を通知し、成功すると天気予報を持つ状態を通知する', () async {
       final container = createContainer(
         FakeYumemiWeather.returns(weatherResponseJson()),
       );
       final states = listenStates(container);
 
-      container.read(weatherViewModelProvider.notifier).fetchWeather();
+      await container.read(weatherViewModelProvider.notifier).fetchWeather();
 
       expect(states, [
-        isWeatherUiState(weatherForecast: isNull, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isNull),
+        const WeatherUiState(),
+        const WeatherUiState(isLoading: true),
+        WeatherUiState(weatherForecast: forecast),
       ]);
     });
 
-    test('tokyo と現在時刻で天気を取得する', () {
+    test('tokyo と現在時刻で天気を取得する', () async {
       final api = FakeYumemiWeather.returns(weatherResponseJson());
       final container = createContainer(api);
       listenStates(container);
 
-      container.read(weatherViewModelProvider.notifier).fetchWeather();
+      await container.read(weatherViewModelProvider.notifier).fetchWeather();
 
       expect(api.requests.map(jsonDecode), [
         {'area': 'tokyo', 'date': '2020-04-01T03:00:00.000Z'},
       ]);
     });
 
+    test('取得中に再度呼び出しても、API は 1 回だけ呼び出す', () async {
+      final api = FakeYumemiWeather.returns(weatherResponseJson());
+      final container = createContainer(api);
+      final states = listenStates(container);
+      final viewModel = container.read(weatherViewModelProvider.notifier);
+
+      await Future.wait([viewModel.fetchWeather(), viewModel.fetchWeather()]);
+
+      expect(api.requests, hasLength(1));
+      expect(states, [
+        const WeatherUiState(),
+        const WeatherUiState(isLoading: true),
+        WeatherUiState(weatherForecast: forecast),
+      ]);
+    });
+
     final failureCases = {
       'API が invalidParameter を投げる': (
         FakeYumemiWeather.throws(YumemiWeatherError.invalidParameter),
-        isA<InvalidParameterError>(),
+        const InvalidParameterError(),
       ),
       'API が unknown を投げる': (
         FakeYumemiWeather.throws(YumemiWeatherError.unknown),
-        isA<UnknownError>(),
+        const UnknownError(),
       ),
       'API が JSON ではない文字列を返す': (
         FakeYumemiWeather.returns('sunny'),
-        isA<MalformedJsonError>(),
+        const MalformedJsonError(),
       ),
       'API が期待する形式ではない JSON を返す': (
         FakeYumemiWeather.returns('[]'),
-        isA<UnexpectedResponseError>(),
+        const UnexpectedResponseError(),
       ),
     };
 
     for (final MapEntry(key: description, value: (api, error))
         in failureCases.entries) {
-      test('$descriptionと、エラーを持つ状態を通知する', () {
+      test('$descriptionと、エラーを持つ状態を通知する', () async {
         final container = createContainer(api);
         final states = listenStates(container);
 
-        container.read(weatherViewModelProvider.notifier).fetchWeather();
+        await container.read(weatherViewModelProvider.notifier).fetchWeather();
 
         expect(states, [
-          isWeatherUiState(weatherForecast: isNull, error: isNull),
-          isWeatherUiState(weatherForecast: isNull, error: error),
+          const WeatherUiState(),
+          const WeatherUiState(isLoading: true),
+          WeatherUiState(error: error),
         ]);
       });
     }
 
-    test('成功の後に失敗すると、表示中の天気予報を残したままエラーを持つ', () {
+    test('成功の後に失敗すると、表示中の天気予報を残したままエラーを持つ', () async {
       final container = createContainer(
         FakeYumemiWeather.returnsThenThrows(
           weatherResponseJson(),
@@ -128,18 +142,19 @@ void main() {
       final states = listenStates(container);
       final viewModel = container.read(weatherViewModelProvider.notifier);
 
-      viewModel
-        ..fetchWeather()
-        ..fetchWeather();
+      await viewModel.fetchWeather();
+      await viewModel.fetchWeather();
 
       expect(states, [
-        isWeatherUiState(weatherForecast: isNull, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isA<UnknownError>()),
+        const WeatherUiState(),
+        const WeatherUiState(isLoading: true),
+        WeatherUiState(weatherForecast: forecast),
+        WeatherUiState(weatherForecast: forecast, isLoading: true),
+        WeatherUiState(weatherForecast: forecast, error: const UnknownError()),
       ]);
     });
 
-    test('clearError で、天気予報を残したままエラーだけを消す', () {
+    test('clearError で、天気予報を残したままエラーだけを消す', () async {
       final container = createContainer(
         FakeYumemiWeather.returnsThenThrows(
           weatherResponseJson(),
@@ -148,16 +163,18 @@ void main() {
       );
       final states = listenStates(container);
 
-      container.read(weatherViewModelProvider.notifier)
-        ..fetchWeather()
-        ..fetchWeather()
-        ..clearError();
+      final viewModel = container.read(weatherViewModelProvider.notifier);
+      await viewModel.fetchWeather();
+      await viewModel.fetchWeather();
+      viewModel.clearError();
 
       expect(states, [
-        isWeatherUiState(weatherForecast: isNull, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isNull),
-        isWeatherUiState(weatherForecast: forecast, error: isA<UnknownError>()),
-        isWeatherUiState(weatherForecast: forecast, error: isNull),
+        const WeatherUiState(),
+        const WeatherUiState(isLoading: true),
+        WeatherUiState(weatherForecast: forecast),
+        WeatherUiState(weatherForecast: forecast, isLoading: true),
+        WeatherUiState(weatherForecast: forecast, error: const UnknownError()),
+        WeatherUiState(weatherForecast: forecast),
       ]);
     });
   });

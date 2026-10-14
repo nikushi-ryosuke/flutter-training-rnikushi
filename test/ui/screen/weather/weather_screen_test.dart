@@ -1,21 +1,34 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_training/data/api/compute_runner.dart';
+import 'package:flutter_training/di/compute_provider.dart';
 import 'package:flutter_training/di/weather_providers.dart';
 import 'package:flutter_training/ui/screen/weather/weather_screen.dart';
 import 'package:yumemi_weather/yumemi_weather.dart';
 
 import '../../../fake/fake_yumemi_weather.dart';
+import '../../../helper/compute_runner.dart';
 
-Future<void> pumpWeatherScreen(WidgetTester tester, YumemiWeather api) {
+Future<void> pumpWeatherScreen(
+  WidgetTester tester,
+  YumemiWeather api, {
+  ComputeRunner compute = computeDirectly,
+}) {
   tester.view
     ..physicalSize = const Size(1080, 2400)
     ..devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   return tester.pumpWidget(
     ProviderScope(
-      overrides: [yumemiWeatherProvider.overrideWithValue(api)],
+      overrides: [
+        yumemiWeatherProvider.overrideWithValue(api),
+        computeProvider.overrideWithValue(compute),
+      ],
       child: const MaterialApp(home: WeatherScreen()),
     ),
   );
@@ -123,6 +136,44 @@ void main() {
       await tapReload(tester);
 
       expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('取得中は CircularProgressIndicator を表示し、Reload を押せなくする', (
+      tester,
+    ) async {
+      final response = Completer<void>();
+      Future<R> computeAfterResponse<M, R>(
+        ComputeCallback<M, R> callback,
+        M message,
+      ) async {
+        await response.future;
+        return callback(message);
+      }
+
+      await pumpWeatherScreen(
+        tester,
+        FakeYumemiWeather.returns(weatherResponseJson()),
+        compute: computeAfterResponse,
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+
+      await tester.tap(find.text('Reload'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+        tester
+            .widget<TextButton>(find.widgetWithText(TextButton, 'Reload'))
+            .onPressed,
+        isNull,
+      );
+
+      response.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(SvgPicture), findsOneWidget);
     });
 
     testWidgets('取得前は気温を ** ℃ で表示する', (tester) async {

@@ -36,7 +36,7 @@ class FakeYumemiWeather extends Fake implements YumemiWeather {
   List<String> get requests => List.unmodifiable(_requests);
 
   @override
-  String fetchWeather(String jsonString) {
+  String syncFetchWeather(String jsonString) {
     _requests.add(jsonString);
     final response = _responses[min(_callCount, _responses.length - 1)];
     _callCount++;

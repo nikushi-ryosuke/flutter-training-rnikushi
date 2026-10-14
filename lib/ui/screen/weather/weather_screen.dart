@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -27,71 +29,89 @@ class WeatherScreen extends ConsumerWidget {
     final weatherForecast = ref.watch(
       weatherViewModelProvider.select((state) => state.weatherForecast),
     );
+    final isLoading = ref.watch(
+      weatherViewModelProvider.select((state) => state.isLoading),
+    );
     final weatherCondition = weatherForecast?.condition;
     final labelLarge = Theme.of(context).textTheme.labelLarge;
 
     return Scaffold(
-      body: Center(
-        child: FractionallySizedBox(
-          widthFactor: 0.5,
-          child: Column(
-            children: [
-              const Spacer(),
-              AspectRatio(
-                aspectRatio: 1,
-                child: weatherCondition == null
-                    ? const Placeholder()
-                    : SvgPicture.asset(weatherCondition.assetPath),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${weatherForecast?.minTemperature ?? '**'} ℃',
-                        textAlign: TextAlign.center,
-                        style: labelLarge?.copyWith(color: Colors.blue),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        '${weatherForecast?.maxTemperature ?? '**'} ℃',
-                        textAlign: TextAlign.center,
-                        style: labelLarge?.copyWith(color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 80),
-                    Row(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Center(
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              child: Column(
+                children: [
+                  const Spacer(),
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: weatherCondition == null
+                        ? const Placeholder()
+                        : SvgPicture.asset(weatherCondition.assetPath),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
                       children: [
                         Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Close'),
+                          child: Text(
+                            '${weatherForecast?.minTemperature ?? '**'} ℃',
+                            textAlign: TextAlign.center,
+                            style: labelLarge?.copyWith(color: Colors.blue),
                           ),
                         ),
                         Expanded(
-                          child: TextButton(
-                            onPressed: () => ref
-                                .read(weatherViewModelProvider.notifier)
-                                .fetchWeather(),
-                            child: const Text('Reload'),
+                          child: Text(
+                            '${weatherForecast?.maxTemperature ?? '**'} ℃',
+                            textAlign: TextAlign.center,
+                            style: labelLarge?.copyWith(color: Colors.red),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 80),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Close'),
+                              ),
+                            ),
+                            Expanded(
+                              child: TextButton(
+                                onPressed: isLoading
+                                    ? null
+                                    : () => unawaited(
+                                        ref
+                                            .read(
+                                              weatherViewModelProvider.notifier,
+                                            )
+                                            .fetchWeather(),
+                                      ),
+                                child: const Text('Reload'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          if (isLoading) ...[
+            const ModalBarrier(dismissible: false, color: Colors.black26),
+            const Center(child: CircularProgressIndicator()),
+          ],
+        ],
       ),
     );
   }
